@@ -16,7 +16,7 @@
         <TargetCommonOption>
           <Device>STM32F427II</Device>
           <Vendor>STMicroelectronics</Vendor>
-          <PackID>Keil.STM32F4xx_DFP.2.17.1</PackID>
+          <PackID>Keil.STM32F4xx_DFP.3.1.1</PackID>
           <PackURL>https://www.keil.com/pack/</PackURL>
           <Cpu>IRAM(0x20000000,0x30000) IRAM2(0x10000000,0x10000) IROM(0x08000000,0x200000) CPUTYPE("Cortex-M4") FPU2 CLOCK(12000000) ELITTLE</Cpu>
           <FlashUtilSpec></FlashUtilSpec>
@@ -340,7 +340,7 @@
               <MiscControls>--gnu</MiscControls>
               <Define>STM32F427_437xx,USE_STDPERIPH_DRIVER,ROBOT_LOOP_ONE.__TARGET_FPU_CM4,ARM_MATH_CM4,__CC_ARM</Define>
               <Undefine></Undefine>
-              <IncludePath>..\core;..\bsp\inc;..\driver\inc;..\library\std\inc;..\user;..\library\freertos\include;..\library\freertos\portable\RVDS\ARM_CM4F;..\user\common;..\library\atom\delay;..\library\atom\sys;..\library\atom\usart;..\library\atom\debug;..\library\mpu6500;..\user\infantry;..\library\vegmath;..\user\common;..\device\inc;..\library\ekf</IncludePath>
+              <IncludePath>..\core;..\bsp\inc;..\driver\inc;..\library\std\inc;..\user;..\library\freertos\include;..\library\freertos\portable\RVDS\ARM_CM4F;..\user\common;..\library\atom\delay;..\library\atom\sys;..\library\atom\usart;..\library\atom\debug;..\library\mpu6500;..\user\infantry;..\library\vegmath;..\user\common;..\device\inc;..\library\ekf;..\library\unitree</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -533,6 +533,16 @@
               <FileName>vector3d.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\library\ekf\vector3d.c</FilePath>
+            </File>
+            <File>
+              <FileName>unitree.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\library\unitree\unitree.c</FilePath>
+            </File>
+            <File>
+              <FileName>unitree.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\library\unitree\unitree.h</FilePath>
             </File>
           </Files>
         </Group>

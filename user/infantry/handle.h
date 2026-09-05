@@ -28,12 +28,16 @@
 #include "Driver_Magic.h"
 #include "Driver_Fsm.h"
 #include "Driver_Vofa.h"
+#include "unitree.h"
 
 #ifdef __HANDLE_GLOBALS
 #define __HANDLE_EXT
 #else
 #define __HANDLE_EXT extern
 #endif
+
+//rtos任务句柄
+__HANDLE_EXT TaskHandle_t MecArmTask_Handler;
 
 // Stone Id
 __HANDLE_EXT uint8_t Board_Id, Robot_Id;

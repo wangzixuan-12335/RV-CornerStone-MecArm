@@ -34,9 +34,10 @@ typedef struct {
     uint8_t  mode           :3;     // 当前运行模式
     uint8_t                 :1;     // 占位
 
-    int32_t  pos;                   // 当前输出轴物理位置 (rad)
-    int16_t  speed;                 // 当前输出轴角速度 (rad/s)
     int16_t  torque;                // 当前实际输出力矩 (N·m)
+    int16_t  speed;                 // 当前输出轴角速度 (rad/s)
+    int32_t  pos;                   // 当前输出轴物理位置 (rad)
+    
     int8_t   temperature;           // 电机温度 (℃)
     uint8_t  error_code     :3;     // 故障状态字 (0为正常)
     uint16_t force          :12;    // 足端力
@@ -89,6 +90,7 @@ typedef struct {
     uint8_t             rx_buf[UNITREE_BUFFER_SIZE];
     
     // 状态控制
+    uint8_t             IsBusy;                         // 总线状态（1：繁忙，0：空闲）
     TickType_t          last_send_time;                 // 发送时间戳 (用于超时检测)
 } Unitree_Bridge_Type;
 

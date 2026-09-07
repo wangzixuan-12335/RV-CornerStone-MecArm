@@ -1,5 +1,6 @@
 #include "handle.h"
 
+
 //预先计算好的 CRC16-CCITT 查找表 (多项式 0x1021，高位在前 MSB First)
 static const uint16_t crc16_ccitt_table[256] = {
     0x0000, 0x1021, 0x2042, 0x3063, 0x4084, 0x50A5, 0x60C6, 0x70E7,
@@ -86,7 +87,7 @@ int16_t Speed_To_Raw(Unitree_Motor_Type *motor,float w_des){
  * @return int32_t 写入串口发送帧的数据
  */
 int32_t Pos_To_Raw(Unitree_Motor_Type *motor,float pos_des){
-    return (int32_t)(pos_des / 6.28318f * 32768.0f * motor->reduction_rate * motor->direction);
+    return (int32_t)((pos_des * motor->direction * motor->reduction_rate + motor->pos_offset)/ 6.28318f * 32768.0f);
 }
 
 /**
@@ -112,8 +113,8 @@ uint16_t Kd_To_Raw(float Kd){
 }
 
 float Raw_To_Angle(Unitree_Motor_Type *motor,int32_t raw_pos){
-    float real_pos=(float)(raw_pos / 32768.0f * 6.28318f / motor->reduction_rate);
-    return (float)((real_pos-motor->pos_offset)*motor->direction);
+    float real_pos=(float)(raw_pos / 32768.0f * 6.28318f);
+    return (float)(((real_pos-motor->pos_offset)*motor->direction) / motor->reduction_rate);
 }
 
 float Raw_To_Speed(Unitree_Motor_Type *motor,int16_t raw_speed){
@@ -262,6 +263,42 @@ void Unitree_Receive(Unitree_Bridge_Type *bridge){
     DMA_Enable(USARTx_Rx, UNITREE_BUFFER_SIZE);
 }
 
+/**
+ * @brief 宇树总线看门狗：防止丢包导致总线死锁
+ * @param bridge 通讯桥变量
+ */
+void Unitree_Bus_Watchdog(Unitree_Bridge_Type *bridge) {
+    if (bridge->IsBusy == 0) {
+        return; // 总线本来就是空闲的，无需处理
+    }
+
+    // 检查从发送到现在的等待时间是否超过阈值
+    if ((xTaskGetTickCount() - bridge->last_send_time) > UNITREE_TIMEOUT_TICKS) {
+        // 1. 获取当前等待超时的电机
+        uint8_t timeout_id = bridge->polling_index;
+        if (timeout_id < bridge->motor_count && bridge->motors[timeout_id] != NULL) {
+            Unitree_Motor_Type *motor = bridge->motors[timeout_id];
+            
+            // 2. 解除该电机的等待标志（允许下次继续发给它或跳过它）
+            motor->status = 0;
+
+            // 3. 统计连续丢帧或更新离线状态
+            // 若距离最后一次收到有效帧超过 50ms，则判定电机离线
+            if (xTaskGetTickCount() - motor->state.updated_at > pdMS_TO_TICKS(50)) {
+                motor->state.online = 0;
+            }
+        }
+
+        // 4. 强制释放总线，避免死锁
+        bridge->IsBusy = 0;
+
+        // 5. 建议：复位 DMA 接收端，清空可能被噪声污染的残缺数据
+        uint32_t deviceID = bridge->deviceID;
+        DMA_Disable(USARTx_Rx);
+        DMA_Enable(USARTx_Rx, UNITREE_BUFFER_SIZE);
+    }
+}
+
 void Unitree_Generate_SendFrame(Unitree_SendFrame_t *frame,Unitree_Motor_Type *motor){
     frame->head[0]=0xFE;
     frame->head[1]=0xEE;
@@ -287,11 +324,16 @@ void Unitree_Motor_Send(Unitree_Bridge_Type *bridge,uint8_t motorId){
     memcpy(bridge->tx_buf,&frame,sizeof(Unitree_SendFrame_t));
     motor->status=1;
     bridge->IsBusy=1;
+    bridge->last_send_time = xTaskGetTickCount();
     DMA_Disable(USARTx_Tx);
     DMA_Enable(USARTx_Tx,sizeof(Unitree_SendFrame_t));
 }
 
 void Unitree_Circular_Send(Unitree_Bridge_Type *bridge){
+    Unitree_Bus_Watchdog(bridge);
+    if (bridge->IsBusy == 1) {
+        return; // 总线正忙，等待当前电机完成收发，不推进索引
+    }
     uint8_t now_id=bridge->polling_index;
     now_id++;
     if(now_id>=bridge->motor_count){

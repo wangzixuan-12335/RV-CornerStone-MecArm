@@ -3,6 +3,7 @@
 
 #define UNITREE_MAX_MOTORS_PER_BUS  2
 #define UNITREE_BUFFER_SIZE         128
+#define UNITREE_TIMEOUT_TICKS  pdMS_TO_TICKS(2) // 超时阈值：2ms
 
 #pragma pack(1)
 
@@ -39,9 +40,9 @@ typedef struct {
     int32_t  pos;                   // 当前输出轴物理位置 (rad)
     
     int8_t   temperature;           // 电机温度 (℃)
-    uint8_t  error_code     :3;     // 故障状态字 (0为正常)
+    uint16_t error_code     :3;     // 故障状态字 (0为正常)
     uint16_t force          :12;    // 足端力
-    uint8_t                 :1;     // 占位
+    uint16_t                 :1;     // 占位
     
     uint16_t crc16;                 // CRC16 校验码
 } Unitree_RecvFrame_t;

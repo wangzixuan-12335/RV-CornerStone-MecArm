@@ -250,9 +250,9 @@ void Unitree_Receive(Unitree_Bridge_Type *bridge){
     // 4. 帧头校验 (快速过滤垃圾数据, 帧头不对直接丢弃, 不算 CRC)
     if (len >= sizeof(Unitree_RecvFrame_t) &&
         bridge->rx_buf[0] == 0xFD && bridge->rx_buf[1] == 0xEE) {
-
+        uint16_t recv_crc = (uint16_t)bridge->rx_buf[14] | ((uint16_t)bridge->rx_buf[15] << 8);
         // 5. CRC16 校验 (确认数据完整无误)
-        if (Get_CRC16_CCITT((uint8_t *)bridge->rx_buf, offsetof(Unitree_RecvFrame_t,crc16))==(((uint16_t)bridge->rx_buf[15]<<8)|(uint16_t)bridge->rx_buf[14])) {
+        if (Get_CRC16_CCITT((uint8_t *)bridge->rx_buf, offsetof(Unitree_RecvFrame_t,crc16))==recv_crc) {
             // 6. 校验通过, 解包并更新电机状态
             Unitree_RecvFrame_t frame;
             Unitree_Unpack(bridge, &frame, bridge->rx_buf);
@@ -300,6 +300,7 @@ void Unitree_Bus_Watchdog(Unitree_Bridge_Type *bridge) {
 }
 
 void Unitree_Generate_SendFrame(Unitree_SendFrame_t *frame,Unitree_Motor_Type *motor){
+    memset(frame, 0, sizeof(Unitree_SendFrame_t));
     frame->head[0]=0xFE;
     frame->head[1]=0xEE;
     frame->id=(motor->id)&0x0F;

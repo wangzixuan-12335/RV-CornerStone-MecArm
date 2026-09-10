@@ -105,6 +105,11 @@ __HANDLE_EXT PWM_Type PWM_Test;
 // CAN
 __HANDLE_EXT Bridge_Type BridgeData;
 
+
+__HANDLE_EXT Unitree_Motor_Type Unitree_MecArm_1;
+__HANDLE_EXT Unitree_Motor_Type Unitree_MecArm_2;
+__HANDLE_EXT Unitree_Bridge_Type Unitree_Bridge;
+
 /**
  * @brief 初始化结构体
  * @note 该函数将在所有硬件及任务初始化之前执行

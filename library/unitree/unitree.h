@@ -73,7 +73,8 @@ typedef struct {
         float      speed;       // 关节实际角速度 (rad/s)
         float      torque;      // 关节实际输出力矩 (N·m)
         int8_t     temperature; // 温度(摄氏度)
-        uint8_t    online;      // 在线标志位 (1: 在线, 0: 离线)
+        uint8_t    online;      // 在线标志位 (1: 在线, 0: 离线，2：故障)
+        uint8_t    error_code;  // 错误代码，参见8010电机反馈【电机错误标识】
         TickType_t updated_at;  // 最后收到反馈的心跳时间戳 (用于看门狗)
     } state;
 
@@ -143,4 +144,16 @@ typedef struct {
     float end_effector_pose[6];
 } Manipulator_Type;
 
+unsigned short Get_CRC16_CCITT(unsigned char *pchMessage, unsigned int dwLength);
+void Unitree_Motor_Init(Unitree_Motor_Type *motor, 
+                        uint8_t id, 
+                        float reduction_rate, 
+                        int8_t dir, 
+                        float zero_offset);
+void Unitree_Bridge_Init(Unitree_Bridge_Type *bridge,
+                         USART_TypeDef *usartx,uint32_t deviceID);
+void Unitree_Bridge_Bind(Unitree_Bridge_Type *bridge,Unitree_Motor_Type *motor);
+void Unitree_Receive(Unitree_Bridge_Type *bridge);
+void Unitree_Circular_Send(Unitree_Bridge_Type *bridge);
+uint8_t Unitree_Motor_Safety_Test(Unitree_Bridge_Type *bridge, uint8_t motor_id, uint32_t timeout_ms);
 #endif

@@ -11,6 +11,10 @@ void Task_MecArm(void *Parameters){
 
     while (1)
     {
+        Unitree_Motor_Safety_Test(&Unitree_Bridge, 0, 20);
+		Unitree_Motor_Safety_Test(&Unitree_Bridge, 1, 20);
+
+		Unitree_Circular_Send(&Unitree_Bridge);
         vTaskDelayUntil(&xLastWakeTime,xFrequency);
     }
 }

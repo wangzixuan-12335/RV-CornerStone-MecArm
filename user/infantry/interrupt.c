@@ -49,7 +49,8 @@ void USART3_IRQHandler(void) {
  * @note  裁判系统读取
  */
 void USART6_IRQHandler(void) {
-        Bridge_Receive_USART(&BridgeData, USART_BRIDGE, 6);
+    //Bridge_Receive_USART(&BridgeData, USART_BRIDGE, 6);
+    Unitree_Receive(&Unitree_Bridge);
 }
 
 /**

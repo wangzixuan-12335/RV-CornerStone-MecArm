@@ -1,6 +1,8 @@
 #ifndef __UNITREE_H
 #define __UNITREE_H
 
+#include "Driver_MecArm.h"
+
 #define UNITREE_MAX_MOTORS_PER_BUS  2
 #define UNITREE_BUFFER_SIZE         128
 #define UNITREE_TIMEOUT_TICKS  pdMS_TO_TICKS(2) // 超时阈值：2ms
@@ -96,53 +98,6 @@ typedef struct {
     TickType_t          last_send_time;                 // 发送时间戳 (用于超时检测)
 } Unitree_Bridge_Type;
 
-typedef enum {
-    JOINT_ACTUATOR_DJI_CAN,      // DJI 3508 / 6020 / 2006
-    JOINT_ACTUATOR_UNITREE_UART  // 宇树 RS485 / UART 电机
-} Joint_Actuator_Type_e;
-
-// 关节控制模式
-typedef enum {
-    JOINT_MODE_RELAX,     // 掉电/松开
-    JOINT_MODE_POSITION,  // 位置模式 (走双环 PID 或 宇树PD)
-    JOINT_MODE_IMPEDANCE  // 阻抗控制模式 (位置+速度+前馈力矩)
-} Joint_Control_Mode_e;
-
-// 前向声明
-typedef struct Arm_Joint_Type Arm_Joint_Type;
-
-// 统一机械臂关节结构体
-struct Arm_Joint_Type {
-    // 基础信息
-    Joint_Actuator_Type_e type;         // 电机硬件类型
-    void                 *motor_handle; // 指向实际的 Motor_Type 或 Unitree_Motor_Type
-    
-    // 物理与安全限制
-    float min_angle;                    // 关节软限位 最小角 (rad)
-    float max_angle;                    // 关节软限位 最大角 (rad)
-    float max_speed;                    // 最大运行角速度 (rad/s)
-    float max_torque;                   // 最大力矩限制 (N·m)
-
-    // 抽象控制接口 (方法多态绑定)
-    // 1. 设置期望状态 (角度, 速度, 前馈力矩, 刚度/阻尼系数)
-    void  (*Set_Target)(Arm_Joint_Type *self, float pos_des, float vel_des, float tau_ff, float kp, float kd);
-    // 2. 读取关节当前角度 (统一输出 rad)
-    float (*Get_Angle)(Arm_Joint_Type *self);
-    // 3. 读取关节当前转速 (统一输出 rad/s)
-    float (*Get_Speed)(Arm_Joint_Type *self);
-    // 4. 检查关节是否在线/正常
-    uint8_t (*Is_Online)(Arm_Joint_Type *self);
-};
-
-// 完整机械臂实体
-typedef struct {
-    Arm_Joint_Type joints[5];           // 5 自由度机械臂关节数组
-    uint8_t        joint_count;         // 关节数量
-    uint8_t        is_enabled;          // 机械臂总体使能标志
-    
-    // 机械臂末端笛卡尔坐标反馈 (X, Y, Z, Roll, Pitch, Yaw)
-    float end_effector_pose[6];
-} Manipulator_Type;
 
 unsigned short Get_CRC16_CCITT(unsigned char *pchMessage, unsigned int dwLength);
 void Unitree_Motor_Init(Unitree_Motor_Type *motor, 
@@ -156,4 +111,9 @@ void Unitree_Bridge_Bind(Unitree_Bridge_Type *bridge,Unitree_Motor_Type *motor);
 void Unitree_Receive(Unitree_Bridge_Type *bridge);
 void Unitree_Circular_Send(Unitree_Bridge_Type *bridge);
 uint8_t Unitree_Motor_Safety_Test(Unitree_Bridge_Type *bridge, uint8_t motor_id, uint32_t timeout_ms);
+void Unitree_Set_Target(Arm_Joint_Type *self, Joint_Command_t *joint_command);
+float Unitree_Get_Angle(Arm_Joint_Type *self);
+float Unitree_Get_Speed(Arm_Joint_Type *self);
+uint8_t Unitree_Is_Online(Arm_Joint_Type *self);
+
 #endif

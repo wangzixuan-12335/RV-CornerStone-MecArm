@@ -11,10 +11,27 @@ void Task_MecArm(void *Parameters){
 
     while (1)
     {
-        Unitree_Motor_Safety_Test(&Unitree_Bridge, 0, 20);
-		Unitree_Motor_Safety_Test(&Unitree_Bridge, 1, 20);
+        // Unitree_Motor_Safety_Test(&Unitree_Bridge, 0, 20);
+		// Unitree_Motor_Safety_Test(&Unitree_Bridge, 1, 20);
 
+        // Joint_Command_t test;
+        // test.pos_des=PI/2;
+        // test.pos_pid=&Motor6020_MecArm_3_PosPID;
+        // test.speed_pid=&Motor6020_MecArm_3_SpeedPID;
+        // Arm_Joint_3.Set_Target(&Arm_Joint_3,&test);
+        
+        //Vofa debug发送
+        // vf_debug.data[0]=test.pos_des;
+        // vf_debug.data[1]=Arm_Joint_3.Get_Angle(&Arm_Joint_3);
+        // Vofa_Debug_Send(3);
+
+        MecArm_Calculate(&MecArm,0,500.0f,0,PI/2.0f,0);
+
+        MecArm_Control(&MecArm);
+        //电机发送
 		Unitree_Circular_Send(&Unitree_Bridge);
+        Bridge_Send_Motor(&BridgeData, SafetyMode);
+
         vTaskDelayUntil(&xLastWakeTime,xFrequency);
     }
 }

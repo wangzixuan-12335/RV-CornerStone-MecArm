@@ -104,7 +104,7 @@ float Raw_To_Angle(Unitree_Motor_Type *motor,int32_t raw_pos){
     // 1. 原始值按满量程 32768 归一化, 乘 2π (6.28318) 得到电机轴原始角度 real_pos (rad)
     float real_pos=(float)(raw_pos / 32768.0f * 6.28318f);
     // 2. 减去零位偏置 -> 乘以方向极性 -> 除以减速比, 得到负载侧实际输出角度
-    return (float)(((real_pos-motor->pos_offset)*motor->direction) / motor->reduction_rate);
+    return (float)((((real_pos)*motor->direction) / motor->reduction_rate)-motor->pos_offset);
 }
 
 /**
@@ -341,6 +341,8 @@ void Unitree_Motor_Send(Unitree_Bridge_Type *bridge,uint8_t motorId){
     Unitree_Motor_Type *motor=bridge->motors[motorId];
     Unitree_SendFrame_t frame;
     if(motor->status==1 || bridge->IsBusy==1 || motor->state.online==2){
+        //电机online==2则为故障，也直接不推进轮询
+        //目前没有电机掉线机械臂还要继续运行的需求，特此备注
         return;
     }
     bridge->polling_index=motorId;
@@ -424,4 +426,54 @@ uint8_t Unitree_Motor_Safety_Test(Unitree_Bridge_Type *bridge, uint8_t motor_id,
     //     // 超时未收到反馈，检查 RS485 收发器使能、接线(A/B)、波特率(4Mbps)或电机ID是否匹配
     //     return 0;
     // }
+}
+
+/**
+ * @brief 宇树电机根据参数前往目标角度
+ * @param *self 机械臂关节指针
+ * @param *joint_command 电机指令结构体 
+ * @return void
+ */
+void Unitree_Set_Target(Arm_Joint_Type *self, Joint_Command_t *joint_command){
+    Unitree_Motor_Type* motor=(Unitree_Motor_Type*)(self->motor_handle);
+    motor->cmd.mode=1;
+    motor->cmd.target_angle=joint_command->pos_des;
+    motor->cmd.target_speed=joint_command->vel_des;
+    motor->cmd.target_torque=joint_command->tau_ff;
+    motor->cmd.kp=joint_command->kp;
+    motor->cmd.kd=joint_command->kd;
+}
+
+/**
+ * @brief 宇树电机获取电机角度
+ * @param *self 机械臂关节指针
+ * @return float:返回电机当前角度(rad)
+ */
+float Unitree_Get_Angle(Arm_Joint_Type *self){
+    Unitree_Motor_Type* motor=(Unitree_Motor_Type*)(self->motor_handle);
+    return (float)motor->state.angle;
+}
+
+/**
+ * @brief 宇树电机获取电机速度
+ * @param *self 机械臂关节指针
+ * @return float:返回电机当前速度(rad/s)
+ */
+float Unitree_Get_Speed(Arm_Joint_Type *self){
+    Unitree_Motor_Type* motor=(Unitree_Motor_Type*)(self->motor_handle);
+    return (float)motor->state.speed;
+}
+
+/**
+ * @brief 宇树电机获取在线状态
+ * @param *self 机械臂关节指针
+ * @return uint8_t:返回电机在线状态(1:在线 或0:不在线)
+ */
+uint8_t Unitree_Is_Online(Arm_Joint_Type *self){
+    Unitree_Motor_Type* motor=(Unitree_Motor_Type*)(self->motor_handle);
+    if(motor->state.online==1){
+        return 1;
+    }else{
+        return 0;
+    }
 }

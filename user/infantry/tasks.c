@@ -21,12 +21,12 @@ void Task_MecArm(void *Parameters){
         // Arm_Joint_3.Set_Target(&Arm_Joint_3,&test);
         
         //Vofa debug发送
-        // vf_debug.data[0]=test.pos_des;
-        // vf_debug.data[1]=Arm_Joint_3.Get_Angle(&Arm_Joint_3);
-        // Vofa_Debug_Send(3);
+        vf_debug.data[0]=PI/2.0f;
+        vf_debug.data[1]=(Motor6020_MecArm_0_0.angle)/180.0f*PI;
+        vf_debug.data[2]=(Motor6020_MecArm_0_1.angle)/180.0f*PI;
+        Vofa_Debug_Send(3);
 
-        MecArm_Calculate(&MecArm,0,500.0f,0,PI/2.0f,0);
-
+        MecArm_Calculate(&MecArm,PI/2.0f,500.0f,0,PI/2.0f,0);
         MecArm_Control(&MecArm);
         //电机发送
 		Unitree_Circular_Send(&Unitree_Bridge);

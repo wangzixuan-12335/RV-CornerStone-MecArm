@@ -88,7 +88,7 @@ void MecArm_Init(Manipulator_Type *arm,
 
 //TODO:解算未完成
 void MecArm_Calculate(Manipulator_Type *arm,
-    float x,float y,float z,
+    float polarTheta,float r,float z,
     float pitch,float yaw){
 
     float y1,z1,cos_theta1,sin_theta1,theta1;
@@ -96,7 +96,7 @@ void MecArm_Calculate(Manipulator_Type *arm,
     float y3,z3,theta3;
     float k1,k2;
 
-    y3=y-ARM_L3*cos(pitch);
+    y3=r-ARM_L3*cos(pitch);
     z3=z+ARM_L3*sin(pitch);
     
     cos_theta2=(y3*y3+z3*z3-ARM_L1*ARM_L1-ARM_L2*ARM_L2)/(2*ARM_L1*ARM_L2);
@@ -115,6 +115,7 @@ void MecArm_Calculate(Manipulator_Type *arm,
     if(IsInRange(theta1,arm->joints[1]->min_angle,arm->joints[1]->max_angle) &&
         IsInRange(theta2,arm->joints[2]->min_angle,arm->joints[2]->max_angle) &&
         IsInRange(theta3,arm->joints[3]->min_angle,arm->joints[3]->max_angle)){
+            arm->joint_target[0]=polarTheta;
             arm->joint_target[1]=theta1;
             arm->joint_target[2]=theta2;
             arm->joint_target[3]=theta3;
@@ -124,26 +125,34 @@ void MecArm_Calculate(Manipulator_Type *arm,
 //TODO: 机械臂控制未完成
 void MecArm_Control(Manipulator_Type *arm){
     //临时测试
-    for (uint8_t i = 1; i < 4; i++)
+    for (uint8_t i = 0; i < 4; i++)
     {
         Joint_Command_t *joint_command=&(arm->joints[i]->joint_command);
-        // if(i==3){
-        //     joint_command->kd=0;
-        //     joint_command->kp=0;
-        //     joint_command->tau_ff=0;
-        //     joint_command->vel_des=0;
-        //     joint_command->pos_des=arm->joint_target[i];
-        //     joint_command->pos_pid=&Motor6020_MecArm_3_PosPID;
-        //     joint_command->speed_pid=&Motor6020_MecArm_3_SpeedPID;
-        // }else{
-		// 	joint_command->kd=0;
-        //     joint_command->tau_ff=0;
-        //     joint_command->vel_des=0;
-        //     joint_command->pos_pid=NULL;
-        //     joint_command->speed_pid=NULL;
-        //     joint_command->pos_des=arm->joint_target[i];
-        //     joint_command->kp=0.2f;
-        // }
-        arm->joints[i]->Set_Target(arm->joints[i],&joint_command);
+        if(i==3){
+            joint_command->kd=0;
+            joint_command->kp=0;
+            joint_command->tau_ff=0;
+            joint_command->vel_des=0;
+            joint_command->pos_des=arm->joint_target[i];
+            joint_command->pos_pid=&Motor6020_MecArm_3_PosPID;
+            joint_command->speed_pid=&Motor6020_MecArm_3_SpeedPID;
+        }else if(i==0){
+            joint_command->kd=0;
+            joint_command->kp=0;
+            joint_command->tau_ff=0;
+            joint_command->vel_des=0;
+            joint_command->pos_des=arm->joint_target[i];
+            joint_command->pos_pid=&Motor6020_MecArm_Group_0_PosPID;
+            joint_command->speed_pid=&Motor6020_MecArm_Group_0_SpeedPID;
+        }else{
+			joint_command->kd=0;
+            joint_command->tau_ff=0;
+            joint_command->vel_des=0;
+            joint_command->pos_pid=NULL;
+            joint_command->speed_pid=NULL;
+            joint_command->pos_des=arm->joint_target[i];
+            joint_command->kp=0.2f;
+        }
+        arm->joints[i]->Set_Target(arm->joints[i],joint_command);
     }
 }

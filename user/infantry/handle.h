@@ -110,6 +110,12 @@ __HANDLE_EXT Bridge_Type BridgeData;
 __HANDLE_EXT Vofa_Debug_JustFloat_Type vf_debug;
 
 //机械臂
+__HANDLE_EXT Motor_Type Motor6020_MecArm_0_0;
+__HANDLE_EXT Motor_Type Motor6020_MecArm_0_1;
+__HANDLE_EXT PID_Type Motor6020_MecArm_Group_0_PosPID;
+__HANDLE_EXT PID_Type Motor6020_MecArm_Group_0_SpeedPID;
+__HANDLE_EXT Motor_Group_Type Motor6020_MecArm_Group_0;
+
 __HANDLE_EXT Unitree_Motor_Type Unitree_MecArm_1;
 __HANDLE_EXT Unitree_Motor_Type Unitree_MecArm_2;
 __HANDLE_EXT Unitree_Bridge_Type Unitree_Bridge;

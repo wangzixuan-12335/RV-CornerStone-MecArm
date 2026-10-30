@@ -9,13 +9,13 @@
 
 //声明角度控制结构体，解决不同电机方法使用参数不一致的问题
 typedef struct{
-    float pos_des;
-    float vel_des;
-    float tau_ff;
-    float kp;
-    float kd;
-    PID_Type *pos_pid;
-    PID_Type *speed_pid;
+    float pos_des;                  //目标角度(6020,8010)
+    float vel_des;                  //目标速度(8010)
+    float tau_ff;                   //前馈力矩(8010,6020计划支持)
+    float kp;                       //刚度系数(8010)
+    float kd;                       //阻尼系数(8010)
+    PID_Type *pos_pid;              //位置PID(6020)
+    PID_Type *speed_pid;            //速度PID(6020)
 }Joint_Command_t;
 
 // 前向声明
@@ -97,7 +97,7 @@ void MecArm_Init(Manipulator_Type *arm,
     uint8_t joint_count,uint8_t is_enabled);
 
 void MecArm_Calculate(Manipulator_Type *arm,
-    float x,float y,float z,
+    float polarTheta,float r,float z,
     float pitch,float yaw);
 
 void MecArm_Control(Manipulator_Type *arm);

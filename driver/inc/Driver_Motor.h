@@ -57,6 +57,13 @@ typedef struct {
     int16_t input;        // 输入电流
 } Motor_Type;
 
+//定义电机组结构体适配一个joint的两个6020电机
+typedef struct{
+    Motor_Type* motor0;
+    Motor_Type* motor1;
+} Motor_Group_Type;
+
+
 /**
  * @brief 初始化电机结构体
  *
@@ -94,5 +101,13 @@ float Motor6020_Get_Angle(Arm_Joint_Type *self);
 float Motor6020_Get_Speed(Arm_Joint_Type *self);
 
 uint8_t Motor6020_Is_Online(Arm_Joint_Type *self);
+
+void Motor6020_Group_Set_Target(Arm_Joint_Type *self, Joint_Command_t *joint_command);
+
+float Motor6020_Group_Get_Angle(Arm_Joint_Type *self);
+
+float Motor6020_Group_Get_Speed(Arm_Joint_Type *self);
+
+uint8_t Motor6020_Group_Is_Online(Arm_Joint_Type *self);
 
 #endif

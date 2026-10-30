@@ -12,7 +12,7 @@
 
 #pragma pack(push, 1)
 typedef struct{
-    float   data[2];
+    float   data[3];
     uint8_t tail[4];
     uint8_t data_num;
 }Vofa_Debug_JustFloat_Type;

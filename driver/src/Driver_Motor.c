@@ -197,7 +197,7 @@ void Motor6020_Set_Target(Arm_Joint_Type *self, Joint_Command_t *joint_command){
     float target_speed=PID_Calculate(joint_command->pos_pid,joint_command->pos_des,angle_feedback);
     float speed_feedback=self->Get_Speed(self);
     float target_current=PID_Calculate(joint_command->speed_pid,target_speed,speed_feedback);
-    motor->input=(int16_t)target_current;
+    motor->input=(int16_t)(target_current*motor->direction);
 }
 
 /**
@@ -230,4 +230,58 @@ float Motor6020_Get_Speed(Arm_Joint_Type *self){
 uint8_t Motor6020_Is_Online(Arm_Joint_Type *self){
     Motor_Type* motor=(Motor_Type*)self->motor_handle;
     return motor->online;
+}
+
+/**
+ * @brief 6020电机组设置目标角度，机械臂关节0使用了两个电机
+ * @param Arm_Joint_Type* 电机关节结构体句柄
+ * @param Joint_Command_t * 电机控制结构体
+ */
+void Motor6020_Group_Set_Target(Arm_Joint_Type *self, Joint_Command_t *joint_command){
+    Motor_Type *motor0,*motor1;
+    PID_Type *pid_pos;
+    PID_Type *pid_speed;
+    pid_pos=joint_command->pos_pid;
+    pid_speed=joint_command->speed_pid;
+    motor0=(Motor_Type*)(((Motor_Group_Type*)(self->motor_handle))->motor0);
+    motor1=(Motor_Type*)(((Motor_Group_Type*)(self->motor_handle))->motor1);
+    float angle_feedback=Motor6020_Group_Get_Angle(self);
+    float target_speed=PID_Calculate(pid_pos,joint_command->pos_des,angle_feedback);
+    float speed_feedback=Motor6020_Group_Get_Speed(self);
+    float target_current=PID_Calculate(pid_speed,target_speed,speed_feedback);
+    motor0->input=(int16_t)(target_current*motor0->direction/2.0f);
+    motor1->input=(int16_t)(target_current*motor1->direction/2.0f);
+}
+
+/**
+ * @brief 读取6020电机组连续角度
+ * @param *self Arm_Joint_Type句柄
+ * @return  6020电机组连续角度
+ */
+float Motor6020_Group_Get_Angle(Arm_Joint_Type *self){
+    Motor_Type* motor0=(Motor_Type*)(((Motor_Group_Type*)(self->motor_handle))->motor0);
+    float angle_rad=((motor0->angle)/180.0f*PI);
+    return angle_rad;
+}
+
+/**
+ * @brief 读取6020电机组速度
+ * @param *self Arm_Joint_Type句柄
+ * @return  6020电机组当前速度
+ */
+float Motor6020_Group_Get_Speed(Arm_Joint_Type *self){
+    Motor_Type* motor0=(Motor_Type*)(((Motor_Group_Type*)(self->motor_handle))->motor0);
+    float speed_rad=(((float)(motor0->speed))*2.0f*PI/60.0f);
+    return speed_rad;
+}
+
+/**
+ * @brief 读取6020电机组在线状态
+ * @param *self Arm_Joint_Type句柄
+ * @return  6020电机组当前在线状态
+ */
+uint8_t Motor6020_Group_Is_Online(Arm_Joint_Type *self){
+    Motor_Type* motor0=(Motor_Type*)(((Motor_Group_Type*)(self->motor_handle))->motor0);
+    Motor_Type* motor1=(Motor_Type*)(((Motor_Group_Type*)(self->motor_handle))->motor1);
+    return (motor0->online & motor0->online);
 }

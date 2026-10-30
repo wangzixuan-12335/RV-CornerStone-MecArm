@@ -6,6 +6,7 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "tasks.h"
+#include "gimbal_tuning.h"
 
 void PF0_3V3(){
     RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOF,ENABLE);
@@ -29,9 +30,11 @@ int main(void) {
     Delay_Init(180);
     //机械臂USART6
     BSP_USART6_Init(4000000,USART_IT_IDLE);
-    //Vofa
+    // USART3 is exclusively owned by the tuning protocol in tuning builds.
     BSP_USART3_Init(500000,0);
+#if !GIMBAL_TUNING_ENABLED
     Vofa_Debug_Init(&vf_debug,3,3);
+#endif
     //CAN总线
     BSP_CAN_Init();
 
@@ -108,6 +111,9 @@ int main(void) {
         &Arm_Joint_4,
     5,1);
 
+    // Must initialize before any control task; no implicit joint0 enable.
+    GimbalTuning_Init();
+
     // 延时等待电机上电启动稳定
     delay_ms(1500);
 
@@ -115,7 +121,7 @@ int main(void) {
     xTaskCreate(
         Task_MecArm,
         "Task_MecArm",
-        256,
+        1024, // words: bounded protocol buffers/call depth; verify high-water on target
         NULL,
         5,
         &MecArmTask_Handler

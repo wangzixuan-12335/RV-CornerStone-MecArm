@@ -127,6 +127,9 @@ void MecArm_Control(Manipulator_Type *arm){
     //临时测试
     for (uint8_t i = 0; i < 4; i++)
     {
+#if GIMBAL_TUNING_ENABLED
+        if(i==0) continue; // joint0 belongs solely to the guarded tuning state machine
+#endif
         Joint_Command_t *joint_command=&(arm->joints[i]->joint_command);
         if(i==3){
             joint_command->kd=0;

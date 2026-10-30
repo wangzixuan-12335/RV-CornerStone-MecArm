@@ -565,6 +565,16 @@
               <FilePath>..\driver\src\Driver_PID.c</FilePath>
             </File>
             <File>
+              <FileName>Driver_GimbalTuning.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\driver\src\Driver_GimbalTuning.c</FilePath>
+            </File>
+            <File>
+              <FileName>Driver_GimbalTuning.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\driver\inc\Driver_GimbalTuning.h</FilePath>
+            </File>
+            <File>
               <FileName>Driver_Magic.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\driver\src\Driver_Magic.c</FilePath>
@@ -663,6 +673,16 @@
               <FileName>tasks.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\user\infantry\tasks.c</FilePath>
+            </File>
+            <File>
+              <FileName>gimbal_tuning.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\user\infantry\gimbal_tuning.c</FilePath>
+            </File>
+            <File>
+              <FileName>gimbal_tuning.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\user\infantry\gimbal_tuning.h</FilePath>
             </File>
           </Files>
         </Group>

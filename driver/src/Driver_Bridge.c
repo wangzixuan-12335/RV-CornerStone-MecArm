@@ -1,5 +1,6 @@
 #include "Driver_Bridge.h"
 #include "handle.h"
+#include "gimbal_tuning.h"
 #pragma pack(8)
 
 void Bridge_Bind(Bridge_Type *bridge, uint8_t type, uint32_t deviceID, void *handle) {
@@ -53,16 +54,29 @@ void Bridge_Receive_CAN(Bridge_Type *bridge, uint8_t type) {
 
     // 读取数据
     CAN_Receive(type == CAN1_BRIDGE ? CAN1 : CAN2, CAN_FIFO0, &CanRxData);
+#if GIMBAL_TUNING_ENABLED
+    // This tuning target uses standard data frames on its motor-only CAN1 bus.
+    // Do not read StdId from an extended frame where the vendor leaves it unset.
+    if(type==CAN1_BRIDGE && (CanRxData.IDE!=CAN_Id_Standard || CanRxData.RTR!=CAN_RTR_Data)) return;
+#endif
     deviceID = CanRxData.StdId;
+#if GIMBAL_TUNING_ENABLED
+    if(type==CAN1_BRIDGE && (deviceID==0x205 || deviceID==0x206) &&
+       (CanRxData.DLC!=8 || ((uint16_t)CanRxData.Data[0]<<8 | CanRxData.Data[1])>=8192u)) return;
+#endif
 
     // 安排数据
     if (IS_MOTOR) {
         Motor_Type *motor = MOTOR;
+        if(!motor) return; // Unbound feedback (e.g. 0x207) must not crash the control CPU.
         if(motor->type==MOTOR_TYPE_GM6020){
             Motor_Update(motor, CanRxData.Data, 3);
         }else{
             Motor_Update(motor, CanRxData.Data, 1);
         }
+#if GIMBAL_TUNING_ENABLED
+        if(type==CAN1_BRIDGE) GimbalTuning_MotorFeedback((uint16_t)deviceID);
+#endif
     }else if(deviceID <= 0x188 && deviceID >= 0x181){
         deviceID = deviceID - 0x180 + 0x200 + 12;
         Motor_Type *motor = MOTOR;
@@ -88,6 +102,7 @@ void Bridge_Send_Motor(Bridge_Type *bridge, uint8_t safetyMode) {
     int                 motorEnabled;
     uint32_t            deviceID;
     uint8_t             type;
+    uint8_t             forceFrame;
     static int16_t      Current_LK;             // LK电机速度控制
     static uint16_t     Can_Send_Id_LK  = 0x141;
 
@@ -98,13 +113,26 @@ void Bridge_Send_Motor(Bridge_Type *bridge, uint8_t safetyMode) {
         //DJI
         for (j = 0; j < 4; j++) {
             isNotEmpty = 0;
+            forceFrame = 0;
             for (k = 0; k < 4; k++) {
                 deviceID     = Can_ESC_Id[j][k];
                 motor        = MOTOR;
                 motorEnabled = motor && motor->inputEnabled && motor->online && (motor->protocol == (j / 2) );
                 currents[k]  = motorEnabled ? motor->input : 0;
+#if GIMBAL_TUNING_ENABLED
+                currents[k] = GimbalTuning_CANSlot((uint8_t)i,Can_Send_Id[j],(uint16_t)deviceID,currents[k],&forceFrame);
+#endif
                 isNotEmpty   = isNotEmpty || motorEnabled;
             }
+            isNotEmpty = isNotEmpty || forceFrame;
+#if GIMBAL_TUNING_ENABLED
+            if(isNotEmpty && i==0 && Can_Send_Id[j]==0x1fe) {
+                // The legacy Can_Send busy-waits forever on a disconnected bus.
+                GimbalTuning_SendCAN(safetyMode?0:currents[0],safetyMode?0:currents[1],
+                                    safetyMode?0:currents[2],safetyMode?0:currents[3]);
+                continue;
+            }
+#endif
             if (isNotEmpty && !safetyMode) {
                 Can_Send(Canx[i], Can_Send_Id[j], currents[0], currents[1], currents[2], currents[3]);
             } else if (isNotEmpty && safetyMode) {

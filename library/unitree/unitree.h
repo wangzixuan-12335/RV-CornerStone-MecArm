@@ -58,6 +58,7 @@ typedef struct {
     uint8_t  status;            // 电机目前是接收还是可发送状态(1:接收，0:发送)
     float    reduction_rate;    // 减速比 (如 6.33, 9.0)
     float    pos_offset;        // 关节零点偏移量 (rad)
+    int8_t   inputEnabled;      // 输入启用
     
     // 2. 控制指令 (上层算法写入)
     struct {
@@ -100,7 +101,8 @@ typedef struct {
 
 
 unsigned short Get_CRC16_CCITT(unsigned char *pchMessage, unsigned int dwLength);
-void Unitree_Motor_Init(Unitree_Motor_Type *motor, 
+void Unitree_Motor_Init(Unitree_Motor_Type *motor,
+                        int8_t inputEnabled,
                         uint8_t id, 
                         float reduction_rate, 
                         int8_t dir, 

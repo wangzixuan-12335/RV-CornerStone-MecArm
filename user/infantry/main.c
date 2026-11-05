@@ -40,8 +40,8 @@ int main(void) {
     Motor_Set_Angle_Bias(&Motor6020_MecArm_0_0,30.5639648f);
     Motor_Init(&Motor6020_MecArm_0_1,GM6020,1,MOTOR_TYPE_GM6020,2.0f,1,1);
     Motor_Set_Angle_Bias(&Motor6020_MecArm_0_1,146.821289f);
-    PID_Init(&Motor6020_MecArm_Group_0_PosPID, 1.8f, 0.0f, 25.0f, 2.0f, 1.0f);
-    PID_Init(&Motor6020_MecArm_Group_0_SpeedPID, 800.0f, 16.0f, 0.0f, 16384.0f, 10000.0f);
+    PID_Init(&Motor6020_MecArm_Group_0_PosPID, 10.0f, 0.0f, 0.0f, 8.0f, 1.2f);
+    PID_Init(&Motor6020_MecArm_Group_0_SpeedPID, 800.0f, 0.0f, 1600.0f, 16384.0f, 10000.0f);
     Motor6020_MecArm_Group_0.motor0=&Motor6020_MecArm_0_0;
     Motor6020_MecArm_Group_0.motor1=&Motor6020_MecArm_0_1;
     Bridge_Bind(&BridgeData,CAN1_BRIDGE,0x205,&Motor6020_MecArm_0_0);
@@ -49,8 +49,8 @@ int main(void) {
 
 
     //宇树电机0，1初始化
-    Unitree_Motor_Init(&Unitree_MecArm_1,0,6.33f,1,-1.48787534f);
-    Unitree_Motor_Init(&Unitree_MecArm_2,1,6.33f,1,-0.627314031f);
+    Unitree_Motor_Init(&Unitree_MecArm_1,1,0,6.33f,1,0.463586539f);
+    Unitree_Motor_Init(&Unitree_MecArm_2,1,1,6.33f,1,0.378072649f);
     //宇树电机桥初始化
     Unitree_Bridge_Init(&Unitree_Bridge,USART6,6);
     //宇树电机绑定宇树电机桥
@@ -64,10 +64,12 @@ int main(void) {
     PID_Init(&Motor6020_MecArm_3_SpeedPID, 180.0f, 20.0f, 0.0f, 16384.0f, 10000.0f);
     Bridge_Bind(&BridgeData,CAN1_BRIDGE,0x208,&Motor6020_MecArm_3);
 
+    //TODO:关节限位要重新写！
     //关节0初始化
     Arm_Joint_Init(&Arm_Joint_0,
         JOINT_ACTUATOR_DJI_CAN,
-        &Motor6020_MecArm_Group_0,0.0f,0.0f,0.0f,0.0f,
+        &Motor6020_MecArm_Group_0,
+        0.0f,0.0f,0.0f,0.0f,
         Motor6020_Group_Set_Target,
         Motor6020_Group_Get_Angle,
         Motor6020_Group_Get_Speed,
@@ -76,7 +78,8 @@ int main(void) {
     //关节1初始化
     Arm_Joint_Init(&Arm_Joint_1,
         JOINT_ACTUATOR_UNITREE_UART,
-        &Unitree_MecArm_1,-1.59295785f,1.5306778f,0.0f,0.0f,
+        &Unitree_MecArm_1,
+        -1.59295785f,1.5306778f,0.0f,0.0f,
         Unitree_Set_Target,
         Unitree_Get_Angle,
         Unitree_Get_Speed,
@@ -85,7 +88,8 @@ int main(void) {
     //关节2初始化
     Arm_Joint_Init(&Arm_Joint_2,
         JOINT_ACTUATOR_UNITREE_UART,
-        &Unitree_MecArm_2,-1.86728072f,2.69006801f,0.0f,0.0f,
+        &Unitree_MecArm_2,
+        -1.86728072f,2.69006801f,0.0f,0.0f,
         Unitree_Set_Target,
         Unitree_Get_Angle,
         Unitree_Get_Speed,
@@ -94,7 +98,8 @@ int main(void) {
     //关节3初始化
     Arm_Joint_Init(&Arm_Joint_3,
         JOINT_ACTUATOR_DJI_CAN,
-        &Motor6020_MecArm_3,-1.65461532f,1.7253028135f,0.0f,0.0f,
+        &Motor6020_MecArm_3,
+        -1.65461532f,1.7253028135f,0.0f,0.0f,
         Motor6020_Set_Target
         ,Motor6020_Get_Angle
         ,Motor6020_Get_Speed
@@ -106,6 +111,7 @@ int main(void) {
         &Arm_Joint_2,
         &Arm_Joint_3,
         &Arm_Joint_4,
+        Get_Tau_ff,
     5,1);
 
     // 延时等待电机上电启动稳定

@@ -63,16 +63,6 @@ int16_t Speed_To_Raw(Unitree_Motor_Type *motor,float w_des){
 }
 
 /**
- * @brief 期望电机位置转换设置值
- * @param motor 宇树电机结构体
- * @param pos_des 期望电机位置(rad)
- * @return int32_t 写入串口发送帧的数据
- */
-int32_t Pos_To_Raw(Unitree_Motor_Type *motor,float pos_des){
-    return (int32_t)((pos_des * motor->direction * motor->reduction_rate + motor->pos_offset)/ 6.28318f * 32768.0f);
-}
-
-/**
  * @brief 关节刚度系数 Kp转换Raw值
  * @param Kp 期待的Kp
  * @return uint16_t 写入串口发送帧的数据
@@ -95,6 +85,18 @@ uint16_t Kd_To_Raw(float Kd){
 }
 
 /**
+ * @brief 期望电机位置转换设置值
+ * @param motor 宇树电机结构体
+ * @param pos_des 期望电机位置(rad)
+ * @return int32_t 写入串口发送帧的数据
+ */
+int32_t Pos_To_Raw(Unitree_Motor_Type *motor,float pos_des){
+    // (目标关节角 + 关节端零偏) * 方向 * 减速比 = 电机端目标绝对弧度
+    float motor_rad = (pos_des + motor->pos_offset) * motor->direction * motor->reduction_rate;
+    return (int32_t)(motor_rad / 6.28318f * 32768.0f);
+}
+
+/**
  * @brief 实际关节输出位置 (多圈累加)  RAW转连续角(rad)
  * @param motor 电机结构体指针
  * @param raw_pos 原始数据
@@ -103,8 +105,8 @@ uint16_t Kd_To_Raw(float Kd){
 float Raw_To_Angle(Unitree_Motor_Type *motor,int32_t raw_pos){
     // 1. 原始值按满量程 32768 归一化, 乘 2π (6.28318) 得到电机轴原始角度 real_pos (rad)
     float real_pos=(float)(raw_pos / 32768.0f * 6.28318f);
-    // 2. 减去零位偏置 -> 乘以方向极性 -> 除以减速比, 得到负载侧实际输出角度
-    return (float)((((real_pos)*motor->direction) / motor->reduction_rate)-motor->pos_offset);
+    // 电机端弧度 / (方向 * 减速比) - 关节端零偏 = 关节实际绝对弧度
+    return (real_pos / (motor->direction * motor->reduction_rate)) - motor->pos_offset;
 }
 
 /**
@@ -132,12 +134,14 @@ float Raw_To_Torque(Unitree_Motor_Type *motor,int16_t raw_torque){
 /**
  * @brief  初始化单个宇树电机
  * @param  motor: 电机结构体指针
+ * @param  inputEnabled 是否启用输出
  * @param  id: 电机硬件ID (0~14)
  * @param  reduction_rate: 外部减速比 (若电机输出轴直接接连杆则填 1.0f)
  * @param  dir: 旋转方向 (1 为正转, -1 为反转)
  * @param  zero_offset: 机械臂零位校准偏置 (rad)
  */
-void Unitree_Motor_Init(Unitree_Motor_Type *motor, 
+void Unitree_Motor_Init(Unitree_Motor_Type *motor,
+                        int8_t inputEnabled,
                         uint8_t id, 
                         float reduction_rate, 
                         int8_t dir, 
@@ -148,6 +152,7 @@ void Unitree_Motor_Init(Unitree_Motor_Type *motor,
     motor->reduction_rate=reduction_rate;
     motor->direction=dir;
     motor->pos_offset=zero_offset;
+    motor->inputEnabled=inputEnabled;
     motor->status=0;
     
     // 2. 初始安全控制量（上电默认进入阻尼模式，防止突然暴冲甩臂）
@@ -340,6 +345,10 @@ void Unitree_Motor_Send(Unitree_Bridge_Type *bridge,uint8_t motorId){
     uint32_t deviceID=bridge->deviceID;
     Unitree_Motor_Type *motor=bridge->motors[motorId];
     Unitree_SendFrame_t frame;
+    if(motor->inputEnabled==0){
+        bridge->polling_index=motorId;
+        return;
+    }
     if(motor->status==1 || bridge->IsBusy==1 || motor->state.online==2){
         //电机online==2则为故障，也直接不推进轮询
         //目前没有电机掉线机械臂还要继续运行的需求，特此备注

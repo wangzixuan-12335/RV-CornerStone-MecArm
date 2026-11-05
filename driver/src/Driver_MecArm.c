@@ -67,6 +67,7 @@ void Arm_Joint_Init(Arm_Joint_Type *ArmJoint,
  * @param Arm_Joint_Type* 关节节点句柄2
  * @param Arm_Joint_Type* 关节节点句柄3
  * @param Arm_Joint_Type* 关节节点句柄4
+ * @param Get_Tau_ff_cb Get_Tau_ffFunc函数指针
  * @param joint_count 关节节点数量
  * @param is_enabled 机械臂使能标志位
  */
@@ -76,14 +77,44 @@ void MecArm_Init(Manipulator_Type *arm,
     Arm_Joint_Type* joint2,
     Arm_Joint_Type* joint3,
     Arm_Joint_Type* joint4,
+    Get_Tau_ffFunc  Get_Tau_ff_cb,
     uint8_t joint_count,uint8_t is_enabled){
     arm->joints[0]=joint0;
     arm->joints[1]=joint1;
     arm->joints[2]=joint2;
     arm->joints[3]=joint3;
     arm->joints[4]=joint4;
+    arm->Get_Tau_ff=Get_Tau_ff_cb;
     arm->joint_count=joint_count;
     arm->is_enabled=is_enabled;
+}
+
+/**
+ * @brief 获取指定关节的重力前馈
+ * @param Manipulator_Type *self Manipulator_Type句柄
+ * @param joint_index 关节索引号（目前仅支持1，2）
+ * @return 关节的重力前馈
+ */
+float Get_Tau_ff(Manipulator_Type *self,uint8_t joint_index){
+    float ret=0.0f;
+    float theta1,theta2;
+    theta1=self->joints[1]->Get_Angle(self->joints[1]);
+    theta2=self->joints[2]->Get_Angle(self->joints[2]);
+    //偏导数推出来的重力补偿
+    switch (joint_index)
+    {
+    case 1:
+        ret+=(-4.8678944f)*sin(theta1)+(-2.63721157f)*sin(theta1+theta2);
+        return ret;
+        break;
+    case 2:
+        ret+=(-2.63721157)*sin(theta1+theta2);
+        return ret;
+        break;
+    default:
+        return 0.0f;
+        break;
+    }
 }
 
 //TODO:解算未完成
@@ -146,7 +177,7 @@ void MecArm_Control(Manipulator_Type *arm){
             joint_command->speed_pid=&Motor6020_MecArm_Group_0_SpeedPID;
         }else{
 			joint_command->kd=0;
-            joint_command->tau_ff=0;
+            joint_command->tau_ff=arm->Get_Tau_ff(arm,i);
             joint_command->vel_des=0;
             joint_command->pos_pid=NULL;
             joint_command->speed_pid=NULL;

@@ -20,6 +20,7 @@ typedef struct{
 
 // 前向声明
 typedef struct Arm_Joint_Type Arm_Joint_Type;
+typedef struct Manipulator_Type Manipulator_Type;
 
 // 1. 设置期望状态 (角度, 速度, 前馈力矩, 刚度/阻尼系数)
 typedef void (*Set_TargetFunc)(Arm_Joint_Type *self, Joint_Command_t *joint_command);
@@ -29,6 +30,8 @@ typedef float (*Get_AngleFunc)(Arm_Joint_Type *self);
 typedef float (*Get_SpeedFunc)(Arm_Joint_Type *self);
 // 4. 检查关节是否在线/正常
 typedef uint8_t (*Is_OnlineFunc)(Arm_Joint_Type *self);
+// 机械臂计算关节力矩前馈
+typedef float (*Get_Tau_ffFunc)(Manipulator_Type *self,uint8_t joint_index);
 
 typedef enum {
     JOINT_ACTUATOR_DJI_CAN,      // DJI 3508 / 6020 / 2006
@@ -67,7 +70,7 @@ struct Arm_Joint_Type {
 };
 
 // 完整机械臂实体
-typedef struct {
+struct Manipulator_Type{
     Arm_Joint_Type* joints[5];           // 5 自由度机械臂关节数组
     uint8_t        joint_count;         // 关节数量
     uint8_t        is_enabled;          // 机械臂总体使能标志
@@ -76,7 +79,14 @@ typedef struct {
     float joint_target[5];
     // 机械臂末端笛卡尔坐标反馈 (X, Y, Z, Pitch, Yaw)
     float end_effector_pose[5];
-} Manipulator_Type;
+    /**
+     * @brief 获取指定关节的重力前馈
+     * @param Manipulator_Type *self Manipulator_Type句柄
+     * @param joint_index 关节索引号（目前仅支持1，2）
+     * @return 关节的重力前馈
+     */
+    float (*Get_Tau_ff)(Manipulator_Type *self,uint8_t joint_index);
+};
 
 void Arm_Joint_Init(Arm_Joint_Type *ArmJoint,
                     Joint_Actuator_Type_e MotorType,
@@ -94,7 +104,10 @@ void MecArm_Init(Manipulator_Type *arm,
     Arm_Joint_Type* joint2,
     Arm_Joint_Type* joint3,
     Arm_Joint_Type* joint4,
+    Get_Tau_ffFunc  Get_Tau_ff_cb,
     uint8_t joint_count,uint8_t is_enabled);
+
+float Get_Tau_ff(Manipulator_Type *self,uint8_t joint_index);
 
 void MecArm_Calculate(Manipulator_Type *arm,
     float polarTheta,float r,float z,

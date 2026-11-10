@@ -117,7 +117,9 @@ __HANDLE_EXT PID_Type Motor6020_MecArm_Group_0_SpeedPID;
 __HANDLE_EXT Motor_Group_Type Motor6020_MecArm_Group_0;
 
 __HANDLE_EXT Unitree_Motor_Type Unitree_MecArm_1;
+__HANDLE_EXT PID_Type Unitree_MecArm_1_PID;
 __HANDLE_EXT Unitree_Motor_Type Unitree_MecArm_2;
+__HANDLE_EXT PID_Type Unitree_MecArm_2_PID;
 __HANDLE_EXT Unitree_Bridge_Type Unitree_Bridge;
 
 __HANDLE_EXT Motor_Type Motor6020_MecArm_3;

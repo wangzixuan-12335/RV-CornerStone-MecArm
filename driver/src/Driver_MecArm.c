@@ -90,26 +90,43 @@ void MecArm_Init(Manipulator_Type *arm,
 }
 
 /**
- * @brief 获取指定关节的重力前馈
+ * @brief 获取指定关节的力矩前馈
  * @param Manipulator_Type *self Manipulator_Type句柄
  * @param joint_index 关节索引号（目前仅支持1，2）
- * @return 关节的重力前馈
+ * @return 关节的力矩前馈
  */
 float Get_Tau_ff(Manipulator_Type *self,uint8_t joint_index){
-    float ret=0.0f;
+    Arm_Joint_Type *joint1,*joint2;
     float theta1,theta2;
-    theta1=self->joints[1]->Get_Angle(self->joints[1]);
-    theta2=self->joints[2]->Get_Angle(self->joints[2]);
-    //偏导数推出来的重力补偿
+    float tau_ff         =   0.0f;
+    float tau_g          =   0.0f;
+    float pid_i          =   0.0f;
+
+    joint1=self->joints[1];
+    joint2=self->joints[2];
+
+    theta1=joint1->Get_Angle(joint1);
+    theta2=joint2->Get_Angle(joint2);
+    
     switch (joint_index)
     {
     case 1:
-        ret+=(-4.8678944f)*sin(theta1)+(-2.63721157f)*sin(theta1+theta2);
-        return ret;
+        //抵消静差的积分项
+        pid_i=PID_Calculate(joint1->joint_command.extra_integration_pid,joint1->joint_command.pos_des,theta1);
+        //偏导数推出来的重力补偿
+        tau_g=(-4.8678944f)*sin(theta1)+(-2.63721157f)*sin(theta1+theta2);
+        //总前馈
+        tau_ff=pid_i+tau_g;
+        return tau_ff;
         break;
     case 2:
-        ret+=(-2.63721157)*sin(theta1+theta2);
-        return ret;
+        //抵消静差的积分项
+        pid_i=PID_Calculate(joint2->joint_command.extra_integration_pid,joint2->joint_command.pos_des,theta2);
+        //偏导数推出来的重力补偿
+        tau_g=(-2.63721157f)*sin(theta1+theta2);
+        //总前馈
+        tau_ff=pid_i+tau_g;
+        return tau_ff;
         break;
     default:
         return 0.0f;
@@ -175,7 +192,16 @@ void MecArm_Control(Manipulator_Type *arm){
             joint_command->pos_des=arm->joint_target[i];
             joint_command->pos_pid=&Motor6020_MecArm_Group_0_PosPID;
             joint_command->speed_pid=&Motor6020_MecArm_Group_0_SpeedPID;
-        }else{
+        }else if(i==1){
+			joint_command->kd=0.02f;
+            joint_command->tau_ff=arm->Get_Tau_ff(arm,i);
+            joint_command->vel_des=0;
+            joint_command->pos_pid=NULL;
+            joint_command->speed_pid=NULL;
+            joint_command->pos_des=arm->joint_target[i];
+            joint_command->kp=0.2f;
+            joint_command->extra_integration_pid=&Unitree_MecArm_1_PID;
+        }else if(i==2){
 			joint_command->kd=0;
             joint_command->tau_ff=arm->Get_Tau_ff(arm,i);
             joint_command->vel_des=0;
@@ -183,6 +209,7 @@ void MecArm_Control(Manipulator_Type *arm){
             joint_command->speed_pid=NULL;
             joint_command->pos_des=arm->joint_target[i];
             joint_command->kp=0.2f;
+            joint_command->extra_integration_pid=&Unitree_MecArm_2_PID;
         }
         arm->joints[i]->Set_Target(arm->joints[i],joint_command);
     }

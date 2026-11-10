@@ -9,13 +9,17 @@
 
 //声明角度控制结构体，解决不同电机方法使用参数不一致的问题
 typedef struct{
+    //MIT的5变量控制
     float pos_des;                  //目标角度(6020,8010)
     float vel_des;                  //目标速度(8010)
     float tau_ff;                   //前馈力矩(8010,6020计划支持)
     float kp;                       //刚度系数(8010)
     float kd;                       //阻尼系数(8010)
+    //双PID环控制
     PID_Type *pos_pid;              //位置PID(6020)
     PID_Type *speed_pid;            //速度PID(6020)
+    //8010积分项
+    PID_Type *extra_integration_pid;//8010仅积分PID(8010)
 }Joint_Command_t;
 
 // 前向声明

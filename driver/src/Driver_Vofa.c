@@ -33,12 +33,11 @@ void Vofa_Send(uint16_t frequency, uint16_t heapDeth, Node_Type * node, uint32_t
 
 /**
  * @brief Vofa调试初始化，修改Vofa_Debug_JustFloat_Type内float数组数量可以实现更多数据发送
+ * @param Vofa_Debug_JustFloat_Type *vofa调试句柄
  * @param deviceID USARTx x的值（USART3就填3）
- * @param vofa_data_num 要发送的数据个数，必须和Vofa_Debug_JustFloat_Type内data数据个数一致
  */
-void Vofa_Debug_Init(Vofa_Debug_JustFloat_Type *vofa,uint32_t deviceID,uint8_t vofa_data_num){
-  BSP_DMA_Init(USARTx_Tx,vofa->data,offsetof(Vofa_Debug_JustFloat_Type,data_num));
-  vofa->data_num=vofa_data_num;
+void Vofa_Debug_Init(Vofa_Debug_JustFloat_Type *vofa,uint32_t deviceID){
+  BSP_DMA_Init(USARTx_Tx,vofa->data,sizeof(Vofa_Debug_JustFloat_Type));
   vofa->tail[0] = 0x00;
   vofa->tail[1] = 0x00;
   vofa->tail[2] = 0x80;
@@ -51,5 +50,5 @@ void Vofa_Debug_Init(Vofa_Debug_JustFloat_Type *vofa,uint32_t deviceID,uint8_t v
  */
 void Vofa_Debug_Send(uint32_t deviceID){
     DMA_Disable(USARTx_Tx);
-    DMA_Enable(USARTx_Tx,offsetof(Vofa_Debug_JustFloat_Type,data_num));
+    DMA_Enable(USARTx_Tx,sizeof(Vofa_Debug_JustFloat_Type));
 }

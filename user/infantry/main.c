@@ -31,7 +31,7 @@ int main(void) {
     BSP_USART6_Init(4000000,USART_IT_IDLE);
     //Vofa
     BSP_USART3_Init(500000,0);
-    Vofa_Debug_Init(&vf_debug,3,3);
+    Vofa_Debug_Init(&vf_debug,3);
     //CAN总线
     BSP_CAN_Init();
 
@@ -48,6 +48,7 @@ int main(void) {
     Bridge_Bind(&BridgeData,CAN1_BRIDGE,0x206,&Motor6020_MecArm_0_1);
 
 
+    //关节1,2
     //宇树电机0，1初始化
     Unitree_Motor_Init(&Unitree_MecArm_1,1,0,6.33f,1,0.463586539f);
     Unitree_Motor_Init(&Unitree_MecArm_2,1,1,6.33f,1,0.378072649f);
@@ -55,7 +56,9 @@ int main(void) {
     Unitree_Bridge_Init(&Unitree_Bridge,USART6,6);
     //宇树电机绑定宇树电机桥
     Unitree_Bridge_Bind(&Unitree_Bridge,&Unitree_MecArm_1);
+    PID_Init(&Unitree_MecArm_1_PID,0.0f,0.02f,0.0f,2.0f,2.0f);
     Unitree_Bridge_Bind(&Unitree_Bridge,&Unitree_MecArm_2);
+    PID_Init(&Unitree_MecArm_2_PID,0.0f,0.02f,0.0f,2.5f,2.5f);
 
     //6020关节三初始化
     Motor_Init(&Motor6020_MecArm_3,GM6020,1,MOTOR_TYPE_GM6020,2.444444f,1,1);
@@ -64,7 +67,6 @@ int main(void) {
     PID_Init(&Motor6020_MecArm_3_SpeedPID, 180.0f, 20.0f, 0.0f, 16384.0f, 10000.0f);
     Bridge_Bind(&BridgeData,CAN1_BRIDGE,0x208,&Motor6020_MecArm_3);
 
-    //TODO:关节限位要重新写！
     //关节0初始化
     Arm_Joint_Init(&Arm_Joint_0,
         JOINT_ACTUATOR_DJI_CAN,
@@ -89,7 +91,7 @@ int main(void) {
     Arm_Joint_Init(&Arm_Joint_2,
         JOINT_ACTUATOR_UNITREE_UART,
         &Unitree_MecArm_2,
-        -1.86728072f,2.69006801f,0.0f,0.0f,
+        -2.00117916f,2.69006801f,0.0f,0.0f,
         Unitree_Set_Target,
         Unitree_Get_Angle,
         Unitree_Get_Speed,

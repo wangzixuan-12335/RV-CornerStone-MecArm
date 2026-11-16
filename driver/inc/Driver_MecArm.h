@@ -42,13 +42,6 @@ typedef enum {
     JOINT_ACTUATOR_UNITREE_UART  // 宇树 RS485 / UART 电机
 } Joint_Actuator_Type_e;
 
-// 关节控制模式
-typedef enum {
-    JOINT_MODE_RELAX,     // 掉电/松开
-    JOINT_MODE_POSITION,  // 位置模式 (走双环 PID 或 宇树PD)
-    JOINT_MODE_IMPEDANCE  // 阻抗控制模式 (位置+速度+前馈力矩)
-} Joint_Control_Mode_e;
-
 // 统一机械臂关节结构体
 struct Arm_Joint_Type {
     // 基础信息
@@ -78,6 +71,15 @@ struct Manipulator_Type{
     Arm_Joint_Type* joints[5];           // 5 自由度机械臂关节数组
     uint8_t        joint_count;         // 关节数量
     uint8_t        is_enabled;          // 机械臂总体使能标志
+    
+    //目标点以及姿态
+    struct{
+        float polartheta;
+        float r;
+        float z;
+        float pitch;
+        float yaw;
+    }target_point;
     
     // 机械臂各关节目标角度
     float joint_target[5];
@@ -110,6 +112,10 @@ void MecArm_Init(Manipulator_Type *arm,
     Arm_Joint_Type* joint4,
     Get_Tau_ffFunc  Get_Tau_ff_cb,
     uint8_t joint_count,uint8_t is_enabled);
+
+void MecArm_InitialPoint_Init(
+    Manipulator_Type *arm,
+    float polartheta,float r,float z,float pitch,float yaw);
 
 float Get_Tau_ff(Manipulator_Type *self,uint8_t joint_index);
 

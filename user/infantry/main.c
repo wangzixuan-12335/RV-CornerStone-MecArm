@@ -34,6 +34,8 @@ int main(void) {
     Vofa_Debug_Init(&vf_debug,3);
     //CAN总线
     BSP_CAN_Init();
+    //遥控器
+    BSP_DBUS_Init(&remoteBuffer);
 
     //6020关节0（两个6020组成的电机组）初始化
     Motor_Init(&Motor6020_MecArm_0_0,GM6020,1,MOTOR_TYPE_GM6020,2.0f,1,1);
@@ -114,7 +116,8 @@ int main(void) {
         &Arm_Joint_3,
         &Arm_Joint_4,
         Get_Tau_ff,
-    5,1);
+    5,ENABLE);
+    MecArm_InitialPoint_Init(&MecArm,PI/2.0f,400.0f,0.0f,PI/2.0f,0.0f);
 
     // 延时等待电机上电启动稳定
     delay_ms(1500);

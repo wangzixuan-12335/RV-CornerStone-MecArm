@@ -90,6 +90,25 @@ void MecArm_Init(Manipulator_Type *arm,
 }
 
 /**
+ * @brief 机械臂初始姿态初始化
+ * @param Manipulator_Type* 机械臂句柄
+ * @param polartheta 初始姿态底座极坐标角度(rad)
+ * @param r 初始姿态半径(mm)
+ * @param z 初始姿态高度(mm)
+ * @param pitch 初始姿态pitch角(rad)
+ * @param yaw 初始姿态yaw角度(rad)
+ */
+void MecArm_InitialPoint_Init(
+    Manipulator_Type *arm,
+    float polartheta,float r,float z,float pitch,float yaw){
+    arm->target_point.polartheta=polartheta;
+    arm->target_point.r=r;
+    arm->target_point.z=z;
+    arm->target_point.pitch=pitch;
+    arm->target_point.yaw=yaw;
+}
+
+/**
  * @brief 获取指定关节的力矩前馈
  * @param Manipulator_Type *self Manipulator_Type句柄
  * @param joint_index 关节索引号（目前仅支持1，2）
@@ -146,6 +165,11 @@ void MecArm_Calculate(Manipulator_Type *arm,
 
     y3=r-ARM_L3*cos(pitch);
     z3=z+ARM_L3*sin(pitch);
+    
+    //目标位置不可达直接返回
+    if((y3*y3+z3*z3)>(ARM_L1+ARM_L2)*(ARM_L1+ARM_L2)){
+        return;
+    }
     
     cos_theta2=(y3*y3+z3*z3-ARM_L1*ARM_L1-ARM_L2*ARM_L2)/(2*ARM_L1*ARM_L2);
     cos_theta2=max(min(cos_theta2, 1.0), -1.0);

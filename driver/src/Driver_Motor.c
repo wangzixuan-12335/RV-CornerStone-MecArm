@@ -283,5 +283,5 @@ float Motor6020_Group_Get_Speed(Arm_Joint_Type *self){
 uint8_t Motor6020_Group_Is_Online(Arm_Joint_Type *self){
     Motor_Type* motor0=(Motor_Type*)(((Motor_Group_Type*)(self->motor_handle))->motor0);
     Motor_Type* motor1=(Motor_Type*)(((Motor_Group_Type*)(self->motor_handle))->motor1);
-    return (motor0->online & motor0->online);
+    return (motor0->online & motor1->online);
 }

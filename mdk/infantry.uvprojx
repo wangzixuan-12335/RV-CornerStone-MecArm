@@ -540,11 +540,6 @@
               <FileType>1</FileType>
               <FilePath>..\library\unitree\unitree.c</FilePath>
             </File>
-            <File>
-              <FileName>unitree.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\library\unitree\unitree.h</FilePath>
-            </File>
           </Files>
         </Group>
         <Group>
@@ -619,11 +614,6 @@
               <FileName>Driver_MecArm.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\driver\src\Driver_MecArm.c</FilePath>
-            </File>
-            <File>
-              <FileName>Driver_MecArm.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\driver\inc\Driver_MecArm.h</FilePath>
             </File>
           </Files>
         </Group>

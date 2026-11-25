@@ -1,3 +1,4 @@
+#include "unitree.h"
 #include "handle.h"
 
 static const uint16_t crc16_ccitt_table[256] = {
@@ -291,29 +292,31 @@ void Unitree_Bus_Watchdog(Unitree_Bridge_Type *bridge) {
 
     // 检查从发送到现在的等待时间是否超过阈值
     if ((xTaskGetTickCount() - bridge->last_send_time) > UNITREE_TIMEOUT_TICKS) {
-        // 1. 获取当前等待超时的电机
-        uint8_t timeout_id = bridge->polling_index;
-        if (timeout_id < bridge->motor_count && bridge->motors[timeout_id] != NULL) {
-            Unitree_Motor_Type *motor = bridge->motors[timeout_id];
-            
-            // 2. 解除该电机的等待标志（允许下次继续发给它或跳过它）
-            motor->status = 0;
-
-            // 3. 统计连续丢帧或更新离线状态
-            // 若距离最后一次收到有效帧超过 50ms，则判定电机离线
-            if (xTaskGetTickCount() - motor->state.updated_at > pdMS_TO_TICKS(50)) {
-                //给故障标志位
-                motor->state.online = 2;
-            }
-        }
-
-        // 4. 强制释放总线，避免死锁
+        // 1. 强制释放总线，避免死锁
         bridge->IsBusy = 0;
 
-        // 5. 复位 DMA 接收端，清空可能被噪声污染的残缺数据
+        // 2. 复位 DMA 接收端，清空可能被噪声污染的残缺数据
         uint32_t deviceID = bridge->deviceID;
         DMA_Disable(USARTx_Rx);
         DMA_Enable(USARTx_Rx, UNITREE_BUFFER_SIZE);
+    }
+}
+
+void Unitree_Motor_Watchdog(Unitree_Bridge_Type *bridge, uint8_t motorId){
+    Unitree_Motor_Type *motor = bridge->motors[motorId];
+    if(motor->status == 0){
+        return;
+    }
+    if((xTaskGetTickCount()-motor->state.updated_at) > UNITREE_TIMEOUT_TICKS){
+        // 1. 解除该电机的等待标志（允许下次继续发给它或跳过它）
+        motor->status = 0;
+
+        // 2. 统计连续丢帧或更新离线状态
+        // 若距离最后一次收到有效帧超过 50ms，则判定电机离线
+        if (xTaskGetTickCount() - motor->state.updated_at > pdMS_TO_TICKS(50)) {
+            //给故障标志位
+            motor->state.online = 2;
+        }
     }
 }
 
@@ -346,10 +349,10 @@ void Unitree_Motor_Send(Unitree_Bridge_Type *bridge,uint8_t motorId){
     Unitree_Motor_Type *motor=bridge->motors[motorId];
     Unitree_SendFrame_t frame;
     if(motor->inputEnabled==0){
-        bridge->polling_index=motorId;
-        return;
+        //使用SafetyTest给所有motor标志置0
+        Unitree_Motor_Safety_Test(bridge,motorId);
     }
-    if(motor->status==1 || bridge->IsBusy==1 || motor->state.online==2){
+    if(motor->status==1 || motor->state.online==2){
         //电机online==2则为故障，也直接不推进轮询
         //目前没有电机掉线机械臂还要继续运行的需求，特此备注
         return;
@@ -378,6 +381,7 @@ void Unitree_Circular_Send(Unitree_Bridge_Type *bridge){
     if(now_id>=bridge->motor_count){
         now_id=0;
     }
+    Unitree_Motor_Watchdog(bridge,now_id);
     Unitree_Motor_Send(bridge,now_id);
 }
 
@@ -385,11 +389,9 @@ void Unitree_Circular_Send(Unitree_Bridge_Type *bridge){
  * @brief  宇树8010电机安全单帧测试函数 (先发一帧拿反馈，超低风险)
  * @param  bridge: 通讯桥指针 (如 &Unitree_Bridge)
  * @param  motor_id: 测试电机的ID (0~14, 如 0 号电机)
- * @param  timeout_ms: 等待反馈超时时间 (推荐 10~50 ms)
  * @return uint8_t: 1 表示收到有效反馈且电机在线, 0 表示超时未收到反馈
  */
-uint8_t Unitree_Motor_Safety_Test(Unitree_Bridge_Type *bridge, uint8_t motor_id, uint32_t timeout_ms)
-{
+uint8_t Unitree_Motor_Safety_Test(Unitree_Bridge_Type *bridge, uint8_t motor_id){
     if (bridge == NULL || motor_id >= UNITREE_MAX_MOTORS_PER_BUS) {
         return 0;
     }
@@ -398,7 +400,7 @@ uint8_t Unitree_Motor_Safety_Test(Unitree_Bridge_Type *bridge, uint8_t motor_id,
         return 0;
     }
 
-    /* 1. 设置极度安全的控制参数 (阻尼/停止模式，零力矩，零刚度) */
+    /* 设置极度安全的控制参数 (阻尼/停止模式，零力矩，零刚度) */
     motor->cmd.mode          = 0;     // 0: 阻尼模式 / 停止 (不输出驱动力矩，安全等级最高)
     motor->cmd.target_angle  = 0.0f;  // 期望角度 0
     motor->cmd.target_speed  = 0.0f;  // 期望速度 0
@@ -406,35 +408,7 @@ uint8_t Unitree_Motor_Safety_Test(Unitree_Bridge_Type *bridge, uint8_t motor_id,
     motor->cmd.kp            = 0.0f;  // 刚度 0 (完全不产生位置恢复力)
     motor->cmd.kd            = 0.0f;  // 阻尼 0 (纯自由读取状态，不阻碍转动)
 
-    /* 2. 状态重置与准备 */
-    //motor->state.online = 0;          // 清除在线标志，用来判断本次是否成功拿到反馈
-    //motor->status       = 0;          // 允许发送
-    //bridge->IsBusy      = 0;          // 释放总线
-
-    /* 3. 发送这一帧指令 */
-    // Unitree_Motor_Send(bridge, motor_id);
-
-    // /* 4. 等待中断接收反馈 (阻塞等待接收中断更新 online 标志) */
-    // uint32_t wait_ticks = 0;
-    // while (motor->state.online == 0 && wait_ticks < (timeout_ms * 1000)) {
-    //     // 微秒级/简易空延时(约1us)，若在FreeRTOS任务中可改为 vTaskDelay(pdMS_TO_TICKS(1))
-    //     for (volatile int i = 0; i < 30; i++); 
-    //     wait_ticks++;
-    // }
-
-    // /* 5. 判断结果 */
-    // if (motor->state.online == 1) {
-    //     // 已成功收到电机反馈帧！
-    //     // 此时可以在调试断点/观察窗口查看:
-    //     // motor->state.angle       (当前实际角度 rad)
-    //     // motor->state.speed       (当前实际速度 rad/s)
-    //     // motor->state.torque      (当前输出力矩 N*m)
-    //     // motor->state.temperature (当前电机温度 ℃)
-    //     return 1;
-    // } else {
-    //     // 超时未收到反馈，检查 RS485 收发器使能、接线(A/B)、波特率(4Mbps)或电机ID是否匹配
-    //     return 0;
-    // }
+    return 1;
 }
 
 /**
@@ -485,4 +459,14 @@ uint8_t Unitree_Is_Online(Arm_Joint_Type *self){
     }else{
         return 0;
     }
+}
+
+/**
+ * @brief 宇树电机打开/关闭输出
+ * @param *self 机械臂关节指针
+ * @param NewState 新标志位（0：关闭/1：开启）
+ */
+void Unitree_Input_Enable(Arm_Joint_Type *self, uint8_t NewState){
+    Unitree_Motor_Type* motor=(Unitree_Motor_Type*)(self->motor_handle);
+    motor->inputEnabled=NewState;
 }

@@ -2,6 +2,7 @@
 #define __UNITREE_H
 
 #include "Driver_MecArm.h"
+#include "FreeRTOS.h"
 
 #define UNITREE_MAX_MOTORS_PER_BUS  2
 #define UNITREE_BUFFER_SIZE         128
@@ -112,10 +113,10 @@ void Unitree_Bridge_Init(Unitree_Bridge_Type *bridge,
 void Unitree_Bridge_Bind(Unitree_Bridge_Type *bridge,Unitree_Motor_Type *motor);
 void Unitree_Receive(Unitree_Bridge_Type *bridge);
 void Unitree_Circular_Send(Unitree_Bridge_Type *bridge);
-uint8_t Unitree_Motor_Safety_Test(Unitree_Bridge_Type *bridge, uint8_t motor_id, uint32_t timeout_ms);
+uint8_t Unitree_Motor_Safety_Test(Unitree_Bridge_Type *bridge, uint8_t motor_id);
 void Unitree_Set_Target(Arm_Joint_Type *self, Joint_Command_t *joint_command);
 float Unitree_Get_Angle(Arm_Joint_Type *self);
 float Unitree_Get_Speed(Arm_Joint_Type *self);
 uint8_t Unitree_Is_Online(Arm_Joint_Type *self);
-
+void Unitree_Input_Enable(Arm_Joint_Type *self, uint8_t NewState);
 #endif

@@ -37,7 +37,7 @@
 #define __HANDLE_EXT extern
 #endif
 
-//rtos任务句柄
+// rtos任务句柄
 __HANDLE_EXT TaskHandle_t MecArmTask_Handler;
 
 // Stone Id
@@ -51,9 +51,9 @@ __HANDLE_EXT uint8_t ControlMode;
 __HANDLE_EXT uint8_t FrictEnabled, StirEnabled, MagzineOpened;
 __HANDLE_EXT uint8_t PsAimEnabled, PsShootEnabled;
 __HANDLE_EXT uint8_t SwingMode, SafetyMode, PigeonMode;
- typedef enum {normalMove = 0, fastMove = 1, frictMove = 2}moveMode_t;
- typedef enum {normalShoot = 0, fastShoot = 1, frictShoot = 2}ShootMode_t;
-__HANDLE_EXT moveMode_t moveMode;
+typedef enum { normalMove = 0, fastMove = 1, frictMove = 2 } moveMode_t;
+typedef enum { normalShoot = 0, fastShoot = 1, frictShoot = 2 } ShootMode_t;
+__HANDLE_EXT moveMode_t  moveMode;
 __HANDLE_EXT ShootMode_t ShootMode;
 
 // 上位机
@@ -78,11 +78,11 @@ __HANDLE_EXT Mouse_Type    mouseData;
 // 陀螺仪
 __HANDLE_EXT volatile ImuData_Type       ImuData;
 __HANDLE_EXT volatile GyroscopeData_Type Gyroscope_EulerData;
-__HANDLE_EXT SemaphoreHandle_t ImuDataReady;
+__HANDLE_EXT SemaphoreHandle_t           ImuDataReady;
 
 // 调试数据
 __HANDLE_EXT DebugData_Type *DebugData;
-__HANDLE_EXT VofaData_type *VofaData;
+__HANDLE_EXT VofaData_type  *VofaData;
 
 // 底盘
 __HANDLE_EXT ChassisData_Type ChassisData;
@@ -96,7 +96,7 @@ __HANDLE_EXT Node_Type         Node_Judge, Node_Host, Node_Board, Node_SuperCap,
 // 弹舱盖舵机
 __HANDLE_EXT PWM_Type PWM_Magazine_Servo;
 
-//发射机构
+// 发射机构
 __HANDLE_EXT Motor_Type Motor_Stir, Motor_FL, Motor_FR;                     // 左/右 摩擦轮 拨弹轮 电机
 __HANDLE_EXT PID_Type   PID_StirSpeed, PID_StirAngle, PID_FireL, PID_FireR; // 拨弹轮 速度/角度 PID
 
@@ -106,31 +106,34 @@ __HANDLE_EXT PWM_Type PWM_Test;
 // CAN
 __HANDLE_EXT Bridge_Type BridgeData;
 
-//Vofa
+// Vofa
 __HANDLE_EXT Vofa_Debug_JustFloat_Type vf_debug;
 
-//机械臂
-__HANDLE_EXT Motor_Type Motor6020_MecArm_0_0;
-__HANDLE_EXT Motor_Type Motor6020_MecArm_0_1;
-__HANDLE_EXT PID_Type Motor6020_MecArm_Group_0_PosPID;
-__HANDLE_EXT PID_Type Motor6020_MecArm_Group_0_SpeedPID;
+// 机械臂
+typedef enum { COMMUNICATION_BUILD = 0, SOLW_MOVE = 1, REMOTE_CONTROL = 2 ,DEBUG = 3} MecArm_State_e;
+__HANDLE_EXT Motor_Type       Motor6020_MecArm_0_0;
+__HANDLE_EXT Motor_Type       Motor6020_MecArm_0_1;
+__HANDLE_EXT PID_Type         Motor6020_MecArm_Group_0_PosPID;
+__HANDLE_EXT PID_Type         Motor6020_MecArm_Group_0_SpeedPID;
 __HANDLE_EXT Motor_Group_Type Motor6020_MecArm_Group_0;
 
-__HANDLE_EXT Unitree_Motor_Type Unitree_MecArm_1;
-__HANDLE_EXT PID_Type Unitree_MecArm_1_PID;
-__HANDLE_EXT Unitree_Motor_Type Unitree_MecArm_2;
-__HANDLE_EXT PID_Type Unitree_MecArm_2_PID;
+__HANDLE_EXT Unitree_Motor_Type  Unitree_MecArm_1;
+__HANDLE_EXT PID_Type            Unitree_MecArm_1_PID;
+__HANDLE_EXT Unitree_Motor_Type  Unitree_MecArm_2;
+__HANDLE_EXT PID_Type            Unitree_MecArm_2_PID;
 __HANDLE_EXT Unitree_Bridge_Type Unitree_Bridge;
 
 __HANDLE_EXT Motor_Type Motor6020_MecArm_3;
-__HANDLE_EXT PID_Type Motor6020_MecArm_3_PosPID;
-__HANDLE_EXT PID_Type Motor6020_MecArm_3_SpeedPID;
+__HANDLE_EXT PID_Type   Motor6020_MecArm_3_PosPID;
+__HANDLE_EXT PID_Type   Motor6020_MecArm_3_SpeedPID;
 
 __HANDLE_EXT Arm_Joint_Type Arm_Joint_0;
 __HANDLE_EXT Arm_Joint_Type Arm_Joint_1;
 __HANDLE_EXT Arm_Joint_Type Arm_Joint_2;
 __HANDLE_EXT Arm_Joint_Type Arm_Joint_3;
-__HANDLE_EXT Arm_Joint_Type Arm_Joint_4;
+// 现有机械臂只有4自由度
+// __HANDLE_EXT Arm_Joint_Type Arm_Joint_4;
+// __HANDLE_EXT Arm_Joint_Type Arm_Joint_5;
 
 __HANDLE_EXT Manipulator_Type MecArm;
 

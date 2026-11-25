@@ -175,7 +175,7 @@ void Motor_Update(Motor_Type *motor, uint8_t data[8], uint8_t type) {
         }
         break;
     default:
-    break;
+        break;
 }
 }
 
@@ -195,6 +195,7 @@ void Motor6020_Set_Target(Arm_Joint_Type *self, Joint_Command_t *joint_command){
     Motor_Type* motor=(Motor_Type*)self->motor_handle;
     float angle_feedback=self->Get_Angle(self);
     float target_speed=PID_Calculate(joint_command->pos_pid,joint_command->pos_des,angle_feedback);
+    target_speed+=joint_command->vel_des;
     float speed_feedback=self->Get_Speed(self);
     float target_current=PID_Calculate(joint_command->speed_pid,target_speed,speed_feedback);
     motor->input=(int16_t)(target_current*motor->direction);
@@ -233,6 +234,16 @@ uint8_t Motor6020_Is_Online(Arm_Joint_Type *self){
 }
 
 /**
+ * @brief 6020电机打开/关闭输出
+ * @param *self 机械臂关节指针
+ * @param NewState 新标志位（0：关闭/1：开启）
+ */
+void Motor6020_Input_Enable(Arm_Joint_Type *self, uint8_t NewState){
+    Motor_Type* motor=(Motor_Type*)self->motor_handle;
+    motor->inputEnabled=NewState;
+}
+
+/**
  * @brief 6020电机组设置目标角度，机械臂关节0使用了两个电机
  * @param Arm_Joint_Type* 电机关节结构体句柄
  * @param Joint_Command_t * 电机控制结构体
@@ -247,6 +258,7 @@ void Motor6020_Group_Set_Target(Arm_Joint_Type *self, Joint_Command_t *joint_com
     motor1=(Motor_Type*)(((Motor_Group_Type*)(self->motor_handle))->motor1);
     float angle_feedback=Motor6020_Group_Get_Angle(self);
     float target_speed=PID_Calculate(pid_pos,joint_command->pos_des,angle_feedback);
+    target_speed+=joint_command->vel_des;
     float speed_feedback=Motor6020_Group_Get_Speed(self);
     float target_current=PID_Calculate(pid_speed,target_speed,speed_feedback);
     motor0->input=(int16_t)(target_current*motor0->direction/2.0f);
@@ -284,4 +296,16 @@ uint8_t Motor6020_Group_Is_Online(Arm_Joint_Type *self){
     Motor_Type* motor0=(Motor_Type*)(((Motor_Group_Type*)(self->motor_handle))->motor0);
     Motor_Type* motor1=(Motor_Type*)(((Motor_Group_Type*)(self->motor_handle))->motor1);
     return (motor0->online & motor1->online);
+}
+
+/**
+ * @brief 6020电机组打开/关闭输出
+ * @param *self 机械臂关节指针
+ * @param NewState 新标志位（0：关闭/1：开启）
+ */
+void Motor6020_Group_Input_Enable(Arm_Joint_Type *self, uint8_t NewState){
+    Motor_Type* motor0=(Motor_Type*)(((Motor_Group_Type*)(self->motor_handle))->motor0);
+    Motor_Type* motor1=(Motor_Type*)(((Motor_Group_Type*)(self->motor_handle))->motor1);
+    motor0->inputEnabled=NewState;
+    motor1->inputEnabled=NewState;
 }

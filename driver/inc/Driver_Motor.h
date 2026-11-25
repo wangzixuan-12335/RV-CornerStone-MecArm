@@ -102,6 +102,8 @@ float Motor6020_Get_Speed(Arm_Joint_Type *self);
 
 uint8_t Motor6020_Is_Online(Arm_Joint_Type *self);
 
+void Motor6020_Input_Enable(Arm_Joint_Type *self, uint8_t NewState);
+
 void Motor6020_Group_Set_Target(Arm_Joint_Type *self, Joint_Command_t *joint_command);
 
 float Motor6020_Group_Get_Angle(Arm_Joint_Type *self);
@@ -109,5 +111,7 @@ float Motor6020_Group_Get_Angle(Arm_Joint_Type *self);
 float Motor6020_Group_Get_Speed(Arm_Joint_Type *self);
 
 uint8_t Motor6020_Group_Is_Online(Arm_Joint_Type *self);
+
+void Motor6020_Group_Input_Enable(Arm_Joint_Type *self, uint8_t NewState);
 
 #endif

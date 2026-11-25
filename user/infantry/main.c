@@ -21,6 +21,10 @@ void PF0_3V3(){
 }
 
 int main(void) {
+    /**
+     * 这个项目是通通的机械臂的电控实现
+     * 原来是6轴，这次比赛我们直接用了4轴，我代码尽量写了4轴的，但是改起来还是挺好改的
+     */
     NVIC_PriorityGroupConfig(NVIC_PriorityGroup_4);
 
     //初始化
@@ -38,12 +42,12 @@ int main(void) {
     BSP_DBUS_Init(&remoteBuffer);
 
     //6020关节0（两个6020组成的电机组）初始化
-    Motor_Init(&Motor6020_MecArm_0_0,GM6020,1,MOTOR_TYPE_GM6020,2.0f,1,1);
+    Motor_Init(&Motor6020_MecArm_0_0,GM6020,1,MOTOR_TYPE_GM6020,2.0f,1,0);
     Motor_Set_Angle_Bias(&Motor6020_MecArm_0_0,30.5639648f);
-    Motor_Init(&Motor6020_MecArm_0_1,GM6020,1,MOTOR_TYPE_GM6020,2.0f,1,1);
+    Motor_Init(&Motor6020_MecArm_0_1,GM6020,1,MOTOR_TYPE_GM6020,2.0f,1,0);
     Motor_Set_Angle_Bias(&Motor6020_MecArm_0_1,146.821289f);
     PID_Init(&Motor6020_MecArm_Group_0_PosPID, 10.0f, 0.0f, 0.0f, 8.0f, 1.2f);
-    PID_Init(&Motor6020_MecArm_Group_0_SpeedPID, 800.0f, 0.0f, 1600.0f, 16384.0f, 10000.0f);
+    PID_Init(&Motor6020_MecArm_Group_0_SpeedPID, 1150.0f, 1.0f, 1600.0f, 16384.0f, 4000.0f);
     Motor6020_MecArm_Group_0.motor0=&Motor6020_MecArm_0_0;
     Motor6020_MecArm_Group_0.motor1=&Motor6020_MecArm_0_1;
     Bridge_Bind(&BridgeData,CAN1_BRIDGE,0x205,&Motor6020_MecArm_0_0);
@@ -52,8 +56,8 @@ int main(void) {
 
     //关节1,2
     //宇树电机0，1初始化
-    Unitree_Motor_Init(&Unitree_MecArm_1,1,0,6.33f,1,0.463586539f);
-    Unitree_Motor_Init(&Unitree_MecArm_2,1,1,6.33f,1,0.378072649f);
+    Unitree_Motor_Init(&Unitree_MecArm_1,0,0,6.33f,1,2.43976665f);
+    Unitree_Motor_Init(&Unitree_MecArm_2,0,1,6.33f,1,-2.58374381f);
     //宇树电机桥初始化
     Unitree_Bridge_Init(&Unitree_Bridge,USART6,6);
     //宇树电机绑定宇树电机桥
@@ -62,8 +66,8 @@ int main(void) {
     Unitree_Bridge_Bind(&Unitree_Bridge,&Unitree_MecArm_2);
     PID_Init(&Unitree_MecArm_2_PID,0.0f,0.02f,0.0f,2.5f,2.5f);
 
-    //6020关节三初始化
-    Motor_Init(&Motor6020_MecArm_3,GM6020,1,MOTOR_TYPE_GM6020,2.444444f,1,1);
+    //6020关节3初始化
+    Motor_Init(&Motor6020_MecArm_3,GM6020,1,MOTOR_TYPE_GM6020,2.444444f,1,0);
     Motor_Set_Angle_Bias(&Motor6020_MecArm_3,55.7306595f);
     PID_Init(&Motor6020_MecArm_3_PosPID, 8.0f, 0.0f, -0.2f, 10.0f, 1.0f);
     PID_Init(&Motor6020_MecArm_3_SpeedPID, 180.0f, 20.0f, 0.0f, 16384.0f, 10000.0f);
@@ -77,7 +81,8 @@ int main(void) {
         Motor6020_Group_Set_Target,
         Motor6020_Group_Get_Angle,
         Motor6020_Group_Get_Speed,
-    Motor6020_Group_Is_Online);
+        Motor6020_Group_Is_Online,
+    Motor6020_Group_Input_Enable);
 
     //关节1初始化
     Arm_Joint_Init(&Arm_Joint_1,
@@ -87,7 +92,8 @@ int main(void) {
         Unitree_Set_Target,
         Unitree_Get_Angle,
         Unitree_Get_Speed,
-    Unitree_Is_Online);
+        Unitree_Is_Online,
+    Unitree_Input_Enable);
 
     //关节2初始化
     Arm_Joint_Init(&Arm_Joint_2,
@@ -97,7 +103,8 @@ int main(void) {
         Unitree_Set_Target,
         Unitree_Get_Angle,
         Unitree_Get_Speed,
-    Unitree_Is_Online);
+        Unitree_Is_Online,
+    Unitree_Input_Enable);
     
     //关节3初始化
     Arm_Joint_Init(&Arm_Joint_3,
@@ -107,17 +114,19 @@ int main(void) {
         Motor6020_Set_Target
         ,Motor6020_Get_Angle
         ,Motor6020_Get_Speed
-    ,Motor6020_Is_Online);
+        ,Motor6020_Is_Online,
+    Motor6020_Input_Enable);
 
+    //TODO:is_enabled标志位还没实现
     MecArm_Init(&MecArm,
         &Arm_Joint_0,
         &Arm_Joint_1,
         &Arm_Joint_2,
         &Arm_Joint_3,
-        &Arm_Joint_4,
         Get_Tau_ff,
-    5,ENABLE);
-    MecArm_InitialPoint_Init(&MecArm,PI/2.0f,400.0f,0.0f,PI/2.0f,0.0f);
+    4,ENABLE);
+    
+    MecArm_InitialPoint_Init(&MecArm,PI/2.0f,400.0f,0.0f,PI/2.0f);
 
     // 延时等待电机上电启动稳定
     delay_ms(1500);
